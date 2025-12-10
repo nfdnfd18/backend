@@ -1,0 +1,15 @@
+{
+  "client_name": "AdamGhalizWin NFD App",
+  "client_uri": "http://127.0.0.1:9234/",
+  "redirect_uris": [
+    "http://127.0.0.1:2525/api/auth/bluesky/callback",
+    "http://localhost:2525/api/auth/bluesky/callback"
+  ],
+  "contacts": ["admin@armannotes.com"],
+  "logo_uri": "http://127.0.0.1:9234/logo.png",
+  "policy_uri": "http://127.0.0.1:9234/privacy",
+  "tos_uri": "http://127.0.0.1:9234/terms",
+  "scope": "openid email profile",
+  "grant_types": ["authorization_code"],
+  "token_endpoint_auth_method": "client_secret_post"
+}

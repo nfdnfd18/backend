@@ -1,0 +1,804 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// DO NOT DELETE OK
+// Merged: preserves new schema structure and integrates selected fields from the old schema
+
+// ===== USER MODEL =====
+model User {
+  id                        String    @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Basic Info
+  username                  String    @unique
+  email                     String    @unique
+  password                  String
+  firstName                 String?
+  lastName                  String?
+  phone                     String?
+  avatar                    String?
+  headerImage               String?
+  dateOfBirth               DateTime?
+  gender                    String?
+  bio                       String?
+  website                   String?
+  profession                String?
+  interests                 String[]  @default([])
+
+  // Address & Location
+  address                   String?
+  city                      String?
+  state                     String?
+  zipCode                   String?
+  country                   String?   @default("USA")
+  latitude                  Float?
+  longitude                 Float?
+
+  // Authentication & Security
+  refreshToken              String?
+  emailVerified             Boolean   @default(false)
+  emailVerificationToken    String?
+  passwordResetToken        String?
+  passwordResetExpires      DateTime?
+  twoFactorEnabled          Boolean   @default(false)
+  twoFactorSecret           String?
+  loginHistory              Json?
+  lastIPAddress             String?
+  deviceType                String?
+  browser                   String?
+
+  // Account Status & Analytics
+  isActive                  Boolean   @default(true)
+  isLocked                  Boolean   @default(false)
+  lockReason                String?
+  lastLoginDate             DateTime?
+  loginCount                Int       @default(0)
+  failedLoginAttempts       Int       @default(0)
+  lastFailedLoginDate       DateTime?
+  banExpiresAt              DateTime?
+  lastActivity              DateTime?
+
+  // Social relations (from old schema)
+  followedBy                User[]    @relation("UserFollows", fields: [followedByIDs], references: [id])
+  followedByIDs             String[]  @db.ObjectId
+  following                 User[]    @relation("UserFollows", fields: [followingIDs], references: [id])
+  followingIDs              String[]  @db.ObjectId
+  followStatus              Json?
+  blockedByIDs              String[]  @default([])
+
+  // Gamification / Finance
+  points                    Int       @default(100)
+  level                     Int       @default(1)
+  totalEarned               Float     @default(0)
+  totalSpent                Float     @default(0)
+  badges                    String[]  @default([])
+  achievements              Json?
+
+  // Premium & Roles
+  userType                  UserType  @default(NORMAL)
+  isPremium                 Boolean   @default(false)
+  premiumStartDate          DateTime?
+  premiumEndDate            DateTime?
+  premiumFeatures           String[]  @default([])
+  discountPercentage        Float     @default(0)
+  prioritySupport           Boolean   @default(false)
+  exclusiveAccess           Boolean   @default(false)
+  referralCode              String?
+  referredBy                String?   @db.ObjectId
+
+  // Preferences
+  preferredLanguage         String    @default("en")
+  currency                  String    @default("USD")
+  timezone                  String    @default("UTC")
+  theme                     String?   @default("light")
+  notifications             Json?
+  privacySettings           Json?
+
+  // Session / Device metrics
+  totalSessions             Int       @default(0)
+  avgSessionDuration        Int?
+  deviceList                String[]  @default([])
+  totalSessionTime          Int       @default(0)
+  sessionNumber             Int?
+  isOnline                  Boolean   @default(false)
+
+  // Misc tracking
+  clicks                    Int       @default(0)
+  refreshes                 Int       @default(0)
+
+  // Timestamps
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  // RELATIONSHIPS
+  bookings                  Booking[]      @relation("UserBookings")
+  favorites                 Favorite[]     @relation("UserFavorites")
+  reviews                   Review[]       @relation("UserReviews")
+  payments                  Payment[]      @relation("UserPayments")
+  supportTickets            SupportTicket[] @relation("UserSupportTickets")
+  userNotifications         Notification[] @relation("UserNotifications")
+  blogPosts                 Post[]         @relation("UserPosts")
+  comments                  Comment[]      @relation("UserComments")
+  pointTransactions         PointTransaction[] @relation("UserPointTransactions")
+  sweepstakeEntries         SweepstakeEntry[]  @relation("UserSweepstakeEntries")
+  adminActions              AdminAction[]  @relation("AdminUserActions")
+
+  // Keep compatibility with older models
+  rentals                   Rental[]       @relation("UserRental")
+  messages                  Message[]      @relation("UserMessage")
+  chats                     Chat[]         @relation("UserChats")
+  GameSession               GameSession[]
+}
+
+// ===== CAR MODEL =====
+model Car {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // Basic Info
+  make                String
+  model               String
+  year                Int
+  color               String
+  licensePlate        String         @unique
+  vin                 String?        @unique
+  
+  // Specifications
+  category            CarCategory    // Economy, Compact, Midsize, Fullsize, SUV, Luxury, etc.
+  transmission        Transmission   // Manual, Automatic, CVT
+  fuelType            FuelType       // Gasoline, Diesel, Electric, Hybrid
+  seats               Int
+  doors               Int
+  mileage             Int            @default(0)
+  
+  // Features
+  features            String[]       // AC, GPS, Bluetooth, etc.
+  images              String[]       // Array of image URLs
+  
+  // Pricing
+  pricePerDay         Float
+  pricePerWeek        Float?
+  pricePerMonth       Float?
+  
+  // Availability
+  isAvailable         Boolean        @default(true)
+  location            String         // Current location/branch
+  
+  // Maintenance
+  lastServiceDate     DateTime?
+  nextServiceDate     DateTime?
+  maintenanceNotes    String?
+  
+  // Timestamps
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  
+  // ===== RELATIONSHIPS =====
+  bookings            Booking[]      @relation("CarBookings")
+  favorites           Favorite[]     @relation("CarFavorites")
+  reviews             Review[]       @relation("CarReviews")
+  maintenanceRecords  MaintenanceRecord[] @relation("CarMaintenance")
+  rentals             Rental[]       @relation("CarRentals")
+}
+
+// ===== BOOKING MODEL =====
+model Booking {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // References
+  userId              String         @db.ObjectId
+  carId               String         @db.ObjectId
+  
+  // Booking Details
+  startDate           DateTime
+  endDate             DateTime
+  pickupLocation      String
+  dropoffLocation     String
+  
+  // Pricing
+  totalDays           Int
+  pricePerDay         Float
+  subtotal            Float
+  taxes               Float
+  fees                Float
+  discount            Float          @default(0)
+  totalAmount         Float
+  
+  // Status
+  status              BookingStatus  @default(PENDING)
+  
+  // Additional Services
+  insurance           Boolean        @default(false)
+  gps                 Boolean        @default(false)
+  childSeat           Boolean        @default(false)
+  additionalDriver    Boolean        @default(false)
+  
+  // Notes
+  specialRequests     String?
+  adminNotes          String?
+  
+  // Timestamps
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  
+  // ===== RELATIONSHIPS =====
+  user                User           @relation("UserBookings", fields: [userId], references: [id])
+  car                 Car            @relation("CarBookings", fields: [carId], references: [id])
+  payment             Payment?       @relation("BookingPayment")
+  review              Review?        @relation("BookingReview")
+}
+
+// ===== PAYMENT MODEL =====
+model Payment {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // References
+  userId              String         @db.ObjectId
+  bookingId           String         @unique @db.ObjectId
+  
+  // Payment Details
+  amount              Float
+  currency            String         @default("USD")
+  method              PaymentMethod  // CARD, PAYPAL, STRIPE, etc.
+  status              PaymentStatus  @default(PENDING)
+  
+  // Stripe/Payment Gateway
+  stripePaymentId     String?
+  stripeSessionId     String?
+  
+  // Transaction Details
+  transactionId       String?
+  receiptUrl          String?
+  
+  // Timestamps
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  
+  // ===== RELATIONSHIPS =====
+  user                User           @relation("UserPayments", fields: [userId], references: [id])
+  booking             Booking        @relation("BookingPayment", fields: [bookingId], references: [id])
+}
+
+// ===== ENUMS =====
+enum CarCategory {
+  ECONOMY
+  COMPACT
+  MIDSIZE
+  FULLSIZE
+  SUV
+  LUXURY
+  CONVERTIBLE
+  TRUCK
+  VAN
+}
+
+enum Transmission {
+  MANUAL
+  AUTOMATIC
+  CVT
+}
+
+enum FuelType {
+  GASOLINE
+  DIESEL
+  ELECTRIC
+  HYBRID
+  PLUGIN_HYBRID
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentMethod {
+  CARD
+  PAYPAL
+  STRIPE
+  BANK_TRANSFER
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+// ===== FAVORITES MODEL =====
+model Favorite {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // References
+  userId              String         @db.ObjectId
+  carId               String         @db.ObjectId
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+
+  // ===== RELATIONSHIPS =====
+  user                User           @relation("UserFavorites", fields: [userId], references: [id])
+  car                 Car            @relation("CarFavorites", fields: [carId], references: [id])
+
+  @@unique([userId, carId])
+}
+
+// ===== REVIEW MODEL =====
+model Review {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // References
+  userId              String         @db.ObjectId
+  carId               String         @db.ObjectId
+  bookingId           String         @unique @db.ObjectId
+
+  // Review Details
+  rating              Int            // 1-5 stars
+  title               String?
+  comment             String?
+
+  // Review Categories
+  cleanlinessRating   Int?           // 1-5
+  comfortRating       Int?           // 1-5
+  performanceRating   Int?           // 1-5
+  valueRating         Int?           // 1-5
+
+  // Status
+  isApproved          Boolean        @default(false)
+  isHelpful           Int            @default(0)
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  // ===== RELATIONSHIPS =====
+  user                User           @relation("UserReviews", fields: [userId], references: [id])
+  car                 Car            @relation("CarReviews", fields: [carId], references: [id])
+  booking             Booking        @relation("BookingReview", fields: [bookingId], references: [id])
+}
+
+// ===== SUPPORT TICKET MODEL =====
+model SupportTicket {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // References
+  userId              String         @db.ObjectId
+
+  // Ticket Details
+  subject             String
+  description         String
+  category            SupportCategory
+  priority            Priority       @default(MEDIUM)
+  status              TicketStatus   @default(OPEN)
+
+  // Assignment
+  assignedTo          String?        // Admin user ID
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  resolvedAt          DateTime?
+
+  // ===== RELATIONSHIPS =====
+  user                User           @relation("UserSupportTickets", fields: [userId], references: [id])
+  messages            SupportMessage[] @relation("TicketMessages")
+}
+
+// ===== SUPPORT MESSAGE MODEL =====
+model SupportMessage {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // References
+  ticketId            String         @db.ObjectId
+  senderId            String         @db.ObjectId
+
+  // Message Details
+  message             String
+  isFromAdmin         Boolean        @default(false)
+  attachments         String[]       // File URLs
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+
+  // ===== RELATIONSHIPS =====
+  ticket              SupportTicket  @relation("TicketMessages", fields: [ticketId], references: [id])
+}
+
+// ===== NOTIFICATION MODEL =====
+model Notification {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // References
+  userId              String         @db.ObjectId
+
+  // Notification Details
+  title               String
+  message             String
+  type                NotificationType
+
+  // Status
+  isRead              Boolean        @default(false)
+
+  // Action
+  actionUrl           String?
+
+  // Additional metadata from old schema
+  metadata            Json?
+  displayCount        Int            @default(0)
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+
+  // ===== RELATIONSHIPS =====
+  user                User           @relation("UserNotifications", fields: [userId], references: [id])
+}
+
+// ===== Merged models from old schema =====
+model Rental {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  pickUpLocation String
+  returnLocation String
+  pickUpDate     DateTime
+  dropOffDate    DateTime
+  rentalType     RentalType?  @default(STANDARD)
+  totalCost      Float
+  status         RentalStatus @default(PENDING)
+  carId          String?      @db.ObjectId
+  userId         String?      @db.ObjectId
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  car            Car?         @relation("CarRentals", fields: [carId], references: [id])
+  user           User?        @relation("UserRental", fields: [userId], references: [id])
+}
+
+enum RentalType {
+  LUXURY
+  ECONOMY
+  STANDARD
+  SUV
+  ELECTRIC
+}
+
+enum RentalStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  IN_PROGRESS
+}
+
+model Chat {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String?   @db.ObjectId
+  user          User?     @relation("UserChats", fields: [userId], references: [id])
+  userIDs       String[]
+  createdAt     DateTime  @default(now())
+  seenBy        String[]  @db.ObjectId
+  messages      Message[] @relation("ChatMessages")
+  lastMessage   String?
+  lastMessageAt DateTime?
+  isGroup       Boolean   @default(false)
+  groupName     String?
+  groupAvatar   String?
+}
+
+model Message {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  text        String
+  userId      String?   @db.ObjectId
+  user        User?     @relation("UserMessage", fields: [userId], references: [id])
+  senderId    String
+  chatId      String    @db.ObjectId
+  chat        Chat      @relation("ChatMessages", fields: [chatId], references: [id])
+  createdAt   DateTime  @default(now())
+  isEdited    Boolean   @default(false)
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  attachments String[]
+  reactions   Json?
+}
+
+model GameSession {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String    @db.ObjectId
+  user         User      @relation(fields: [userId], references: [id])
+  gameName     String
+  pointsEarned Int       @default(0)
+  startTime    DateTime  @default(now())
+  endTime      DateTime?
+  isCompleted  Boolean   @default(false)
+}
+
+model CommentReaction {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  commentId String   @db.ObjectId
+  type      String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, commentId])
+}
+
+model PostReaction {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  postId    String   @db.ObjectId
+  type      String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+// ===== ADDITIONAL ENUMS =====
+enum SupportCategory {
+  BOOKING
+  PAYMENT
+  VEHICLE_ISSUE
+  ACCOUNT
+  TECHNICAL
+  GENERAL
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_REMINDER
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  REVIEW_REQUEST
+  PROMOTION
+  SYSTEM
+}
+
+// ===== BLOG POST MODEL =====
+model Post {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // References
+  authorId            String         @db.ObjectId
+
+  // Post Details
+  title               String
+  slug                String         @unique
+  content             String
+  excerpt             String?
+  featuredImage       String?
+
+  // SEO
+  metaTitle           String?
+  metaDescription     String?
+
+  // Status
+  status              PostStatus     @default(DRAFT)
+  isPublished         Boolean        @default(false)
+  publishedAt         DateTime?
+
+  // Engagement
+  views               Int            @default(0)
+  likes               Int            @default(0)
+
+  // Categories
+  tags                String[]
+  category            String?
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  // ===== RELATIONSHIPS =====
+  author              User           @relation("UserPosts", fields: [authorId], references: [id])
+  comments            Comment[]      @relation("PostComments")
+}
+
+// ===== COMMENT MODEL =====
+model Comment {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // References
+  postId              String         @db.ObjectId
+  authorId            String         @db.ObjectId
+  parentId            String?        @db.ObjectId // For nested comments
+
+  // Comment Details
+  content             String
+
+  // Status
+  isApproved          Boolean        @default(false)
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  // ===== RELATIONSHIPS =====
+  post                Post           @relation("PostComments", fields: [postId], references: [id])
+  author              User           @relation("UserComments", fields: [authorId], references: [id])
+  parent              Comment?       @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies             Comment[]      @relation("CommentReplies")
+}
+
+// ===== POINT TRANSACTION MODEL =====
+model PointTransaction {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // References
+  userId              String         @db.ObjectId
+
+  // Transaction Details
+  points              Int            // Can be positive or negative
+  type                PointType
+  description         String
+
+  // Reference
+  referenceId         String?        // Booking ID, Post ID, etc.
+  referenceType       String?        // "booking", "post", "review", etc.
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+
+  // ===== RELATIONSHIPS =====
+  user                User           @relation("UserPointTransactions", fields: [userId], references: [id])
+}
+
+// ===== SWEEPSTAKE ENTRY MODEL =====
+model SweepstakeEntry {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // References
+  userId              String         @db.ObjectId
+  sweepstakeId        String         @db.ObjectId
+
+  // Entry Details
+  ticketNumber        String         @unique
+  pointsSpent         Int
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+
+  // ===== RELATIONSHIPS =====
+  user                User           @relation("UserSweepstakeEntries", fields: [userId], references: [id])
+  sweepstake          Sweepstake     @relation("SweepstakeEntries", fields: [sweepstakeId], references: [id])
+}
+
+// ===== SWEEPSTAKE MODEL =====
+model Sweepstake {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Sweepstake Details
+  title               String
+  description         String
+  prize               String
+  prizeValue          Float
+
+  // Entry Details
+  pointsPerEntry      Int
+  maxEntries          Int?           // Max entries per user
+  totalTickets        Int            @default(0)
+
+  // Dates
+  startDate           DateTime
+  endDate             DateTime
+  drawDate            DateTime?
+
+  // Status
+  isActive            Boolean        @default(true)
+  isCompleted         Boolean        @default(false)
+
+  // Winner
+  winnerId            String?        @db.ObjectId
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  // ===== RELATIONSHIPS =====
+  entries             SweepstakeEntry[] @relation("SweepstakeEntries")
+}
+
+// ===== MAINTENANCE RECORD MODEL =====
+model MaintenanceRecord {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // References
+  carId               String         @db.ObjectId
+
+  // Maintenance Details
+  type                MaintenanceType
+  description         String
+  cost                Float
+  mileage             Int
+
+  // Service Provider
+  serviceProvider     String
+
+  // Timestamps
+  serviceDate         DateTime
+  createdAt           DateTime       @default(now())
+
+  // ===== RELATIONSHIPS =====
+  car                 Car            @relation("CarMaintenance", fields: [carId], references: [id])
+}
+
+// ===== ADMIN ACTION MODEL =====
+model AdminAction {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+
+  // References
+  adminId             String         @db.ObjectId
+
+  // Action Details
+  action              String
+  targetType          String         // "user", "booking", "car", etc.
+  targetId            String
+  details             Json?
+
+  // Timestamps
+  createdAt           DateTime       @default(now())
+
+  // ===== RELATIONSHIPS =====
+  admin               User           @relation("AdminUserActions", fields: [adminId], references: [id])
+}
+
+// ===== ADDITIONAL ENUMS =====
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PointType {
+  EARNED_BOOKING
+  EARNED_REVIEW
+  EARNED_BLOG_POST
+  EARNED_REFERRAL
+  SPENT_SWEEPSTAKE
+  BONUS
+  PENALTY
+}
+
+enum MaintenanceType {
+  OIL_CHANGE
+  TIRE_ROTATION
+  BRAKE_SERVICE
+  ENGINE_SERVICE
+  TRANSMISSION_SERVICE
+  INSPECTION
+  REPAIR
+  CLEANING
+}
+
+// ===== USER TYPE ENUM =====
+enum UserType {
+  NORMAL
+  PREMIUM
+  VIP
+  ADMIN
+}
